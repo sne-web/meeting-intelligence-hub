@@ -1,3 +1,4 @@
+import ChatPanel from "../components/ChatPanel"
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import Navbar from "../components/Navbar"
@@ -394,6 +395,13 @@ function MeetingDetail() {
                 </div>
               </div>
             )}
+            {/* Chatbot */}
+            <div className="mt-8">
+              <h3 className="text-white font-medium mb-4 text-sm">
+                Ask Recall<span className="text-[#00d4e8]">.</span> about this meeting
+              </h3>
+              <ChatPanel meetingId={id} />
+            </div>
           </>
         )}
       </div>

@@ -90,5 +90,97 @@
         "has_enthusiasm": false
       }
     }
+  },
+  {
+    "id": "bfd910f5-6df8-4a5c-8015-a99794f7750f",
+    "filename": "sample.txt",
+    "file_path": "storage\\uploads\\bfd910f5-6df8-4a5c-8015-a99794f7750f.txt",
+    "extension": ".txt",
+    "upload_date": "2026-03-23T22:59:10.489296",
+    "word_count": 175,
+    "speakers": [
+      "John",
+      "Mike",
+      "Sarah"
+    ],
+    "status": "processed",
+    "decisions": [
+      {
+        "description": "delay the API launch by two weeks",
+        "context": "to allow for more testing"
+      },
+      {
+        "description": "optimize the database queries",
+        "context": "before scaling up due to cloud costs going over budget"
+      }
+    ],
+    "action_items": [
+      {
+        "who": "Sarah",
+        "what": "update the documentation",
+        "by_when": "Friday the 15th",
+        "priority": "medium"
+      },
+      {
+        "who": "Mike",
+        "what": "coordinate with the DevOps team to set up the staging environment",
+        "by_when": "end of this week",
+        "priority": "high"
+      },
+      {
+        "who": "Mike",
+        "what": "optimize the database queries",
+        "by_when": "next Wednesday",
+        "priority": "high"
+      }
+    ],
+    "sentiment": {
+      "overall_sentiment": "neutral",
+      "overall_score": 0.2,
+      "summary": "The meeting tone was professional and collaborative, with participants discussing and agreeing on key decisions. The conversation was focused on the API launch timeline, documentation, and cost optimization. The participants demonstrated a constructive and solution-oriented approach to addressing challenges.",
+      "speaker_sentiments": [
+        {
+          "speaker": "John",
+          "sentiment": "neutral",
+          "score": 0.1,
+          "notes": "Facilitated the discussion and ensured key decisions were made"
+        },
+        {
+          "speaker": "Sarah",
+          "sentiment": "neutral",
+          "score": 0.0,
+          "notes": "Raised concerns and participated in the discussion"
+        },
+        {
+          "speaker": "Mike",
+          "sentiment": "neutral",
+          "score": 0.1,
+          "notes": "Agreed with decisions and accepted action items"
+        }
+      ],
+      "segments": [
+        {
+          "topic": "API launch timeline",
+          "sentiment": "agreement",
+          "intensity": "low"
+        },
+        {
+          "topic": "Documentation and staging environment",
+          "sentiment": "agreement",
+          "intensity": "low"
+        },
+        {
+          "topic": "Cloud costs and optimization",
+          "sentiment": "neutral",
+          "intensity": "medium"
+        }
+      ],
+      "flags": {
+        "has_conflict": false,
+        "has_strong_agreement": true,
+        "has_frustration": false,
+        "has_enthusiasm": false
+      }
+    }
   }
 ]

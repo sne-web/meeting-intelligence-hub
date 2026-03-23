@@ -1,0 +1,166 @@
+import { useState, useRef, useEffect } from "react"
+
+// ChatPanel is the chatbot UI component.
+// It receives a meetingId prop so it knows which meeting to query.
+// If meetingId is null it searches across ALL meetings.
+function ChatPanel({ meetingId = null }) {
+  // messages — the conversation history shown in the chat window
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: meetingId
+        ? "Hi! Ask me anything about this meeting — decisions made, action items, what was discussed, or why certain choices were made."
+        : "Hi! Ask me anything across all your uploaded meetings."
+    }
+  ])
+  const [input, setInput] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  // This ref lets us auto-scroll to the latest message
+  const bottomRef = useRef(null)
+
+  // Scroll to bottom whenever messages update
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  async function handleSend() {
+    if (!input.trim() || loading) return
+
+    const question = input.trim()
+    setInput("")
+
+    // Add user message to chat immediately
+    setMessages(prev => [...prev, { role: "user", content: question }])
+    setLoading(true)
+
+    try {
+      const response = await fetch("/api/chat/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Send question and optional meeting_id to backend
+        body: JSON.stringify({
+          question,
+          meeting_id: meetingId
+        })
+      })
+
+      if (!response.ok) throw new Error("Chat request failed")
+
+      const data = await response.json()
+
+      // Add AI response to chat
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: data.answer,
+        sources: data.sources
+      }])
+
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Sorry, I couldn't process that question. Please try again."
+      }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-[500px] bg-[#161b22] border 
+                    border-[#21262d] rounded-2xl overflow-hidden">
+
+      {/* Chat header */}
+      <div className="px-5 py-4 border-b border-[#21262d] flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-[#00d4e8] animate-pulse"></div>
+        <span className="text-white text-sm font-medium">
+          Ask Recall<span className="text-[#00d4e8]">.</span>
+        </span>
+        <span className="text-gray-500 text-xs ml-auto">
+          {meetingId ? "This meeting" : "All meetings"}
+        </span>
+      </div>
+
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[80%] ${msg.role === "user" ? "order-2" : "order-1"}`}>
+
+              {/* Message bubble */}
+              <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                msg.role === "user"
+                  ? "bg-[#00d4e8] text-[#0d1117] font-medium rounded-tr-sm"
+                  : "bg-[#0d1117] text-white border border-[#21262d] rounded-tl-sm"
+              }`}>
+                {msg.content}
+              </div>
+
+              {/* Sources — only shown for assistant messages that have them */}
+              {msg.sources && msg.sources.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-gray-600 text-xs">Sources:</p>
+                  {msg.sources.slice(0, 2).map((source, si) => (
+                    <div key={si} className="bg-[#0d1117] border border-[#21262d] 
+                                            rounded-lg px-3 py-2">
+                      <p className="text-gray-500 text-xs leading-relaxed">
+                        "{source.chunk}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* Loading indicator — shows while waiting for AI response */}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-[#0d1117] border border-[#21262d] rounded-2xl 
+                            rounded-tl-sm px-4 py-3">
+              <div className="flex gap-1 items-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#00d4e8] 
+                                animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#00d4e8] 
+                                animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#00d4e8] 
+                                animate-bounce" style={{ animationDelay: "300ms" }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Invisible div at the bottom — we scroll to this */}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input area */}
+      <div className="px-4 py-4 border-t border-[#21262d] flex gap-3">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          placeholder="Ask about this meeting..."
+          disabled={loading}
+          className="flex-1 bg-[#0d1117] border border-[#21262d] text-white 
+                     placeholder-gray-600 rounded-xl px-4 py-2.5 text-sm
+                     focus:outline-none focus:border-[#00d4e8] transition-colors
+                     disabled:opacity-50"
+        />
+        <button
+          onClick={handleSend}
+          disabled={loading || !input.trim()}
+          className="bg-[#00d4e8] hover:bg-[#00b8cc] disabled:opacity-40
+                     disabled:cursor-not-allowed text-[#0d1117] font-semibold 
+                     px-4 py-2.5 rounded-xl transition-colors text-sm"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export default ChatPanel

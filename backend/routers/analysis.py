@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from services.extractor import extract_decisions_and_actions
 from services.sentiment import analyse_sentiment
+from services.rag_engine import index_transcript
 import json
 import os
 
@@ -22,30 +23,33 @@ def save_meetings(meetings):
 @router.post("/analyse/{meeting_id}")
 async def analyse_meeting(meeting_id: str):
     """
-    Triggers full AI analysis of a meeting — extraction + sentiment.
-    React will call this when the user clicks 'Analyse' on a meeting.
+    Triggers full AI analysis — extraction, sentiment, and RAG indexing.
     """
     meetings = load_meetings()
-    
-    # Find the meeting by ID
     meeting = next((m for m in meetings if m["id"] == meeting_id), None)
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
-    # Read the transcript file from disk
     try:
         with open(meeting["file_path"], "r", encoding="utf-8") as f:
             transcript_text = f.read()
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Transcript file not found")
     
-    # Run extraction — sends transcript to Claude
+    # Run extraction
     extraction = extract_decisions_and_actions(transcript_text)
     
-    # Run sentiment analysis — sends transcript to Claude
+    # Run sentiment analysis
     sentiment = analyse_sentiment(transcript_text, meeting.get("speakers", []))
     
-    # Update the meeting record with results
+    # Index transcript for RAG chatbot
+    # This runs silently in the background
+    try:
+        index_transcript(meeting_id, transcript_text)
+    except Exception as e:
+        print(f"Warning: RAG indexing failed: {e}")
+    
+    # Update meeting record
     for m in meetings:
         if m["id"] == meeting_id:
             m["decisions"] = extraction.get("decisions", [])
@@ -63,7 +67,6 @@ async def analyse_meeting(meeting_id: str):
         "sentiment": sentiment,
         "status": "processed"
     }
-
 
 @router.get("/{meeting_id}")
 def get_analysis(meeting_id: str):
