@@ -1,0 +1,19 @@
+[
+  {
+    "id": "e23ce86f-e86d-407a-8800-67be705ef4d9",
+    "filename": "sample.txt",
+    "file_path": "storage\\uploads\\e23ce86f-e86d-407a-8800-67be705ef4d9.txt",
+    "extension": ".txt",
+    "upload_date": "2026-03-23T14:54:57.627120",
+    "word_count": 175,
+    "speakers": [
+      "Sarah",
+      "Mike",
+      "John"
+    ],
+    "status": "uploaded",
+    "decisions": [],
+    "action_items": [],
+    "sentiment": null
+  }
+]

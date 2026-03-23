@@ -1,13 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import os
+from routers import transcripts
 
 load_dotenv()
 
-# Notice we added root_path="/api" — this tells FastAPI
-# that all its routes are prefixed with /api
-# So /health becomes /api/health, matching what React calls
 app = FastAPI(
     title="Recall. API",
     description="Backend API for the Recall meeting intelligence platform",
@@ -21,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register routers — this tells FastAPI about all the transcript routes
+app.include_router(transcripts.router)
 
 @app.get("/api/health")
 def health_check():
