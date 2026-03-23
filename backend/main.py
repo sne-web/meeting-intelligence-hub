@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routers import transcripts
+from routers import transcripts, analysis
 
 load_dotenv()
 
@@ -19,8 +19,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers — this tells FastAPI about all the transcript routes
 app.include_router(transcripts.router)
+app.include_router(analysis.router)
 
 @app.get("/api/health")
 def health_check():

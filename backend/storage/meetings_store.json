@@ -11,9 +11,84 @@
       "Mike",
       "John"
     ],
-    "status": "uploaded",
-    "decisions": [],
-    "action_items": [],
-    "sentiment": null
+    "status": "processed",
+    "decisions": [
+      {
+        "description": "delay the API launch by two weeks",
+        "context": "to allow for more testing"
+      },
+      {
+        "description": "optimize the database queries before scaling up",
+        "context": "to address cloud costs going over budget"
+      }
+    ],
+    "action_items": [
+      {
+        "who": "Sarah",
+        "what": "update the documentation",
+        "by_when": "Friday the 15th",
+        "priority": "medium"
+      },
+      {
+        "who": "Mike",
+        "what": "coordinate with the DevOps team to set up the staging environment",
+        "by_when": "end of this week",
+        "priority": "high"
+      },
+      {
+        "who": "Mike",
+        "what": "optimize the database queries",
+        "by_when": "next Wednesday",
+        "priority": "high"
+      }
+    ],
+    "sentiment": {
+      "overall_sentiment": "neutral",
+      "overall_score": 0.2,
+      "summary": "The meeting tone was professional and collaborative, with team members discussing and assigning tasks. The team appeared to be on the same page, with no signs of conflict or strong emotions. The discussion focused on the API launch timeline, documentation, and cost optimization.",
+      "speaker_sentiments": [
+        {
+          "speaker": "John",
+          "sentiment": "neutral",
+          "score": 0.1,
+          "notes": "Facilitated the discussion and assigned tasks in a neutral and objective tone."
+        },
+        {
+          "speaker": "Sarah",
+          "sentiment": "neutral",
+          "score": 0.1,
+          "notes": "Raised concerns and discussed tasks in a professional and collaborative manner."
+        },
+        {
+          "speaker": "Mike",
+          "sentiment": "neutral",
+          "score": 0.1,
+          "notes": "Agreed with decisions and accepted tasks in a positive and cooperative tone."
+        }
+      ],
+      "segments": [
+        {
+          "topic": "API launch timeline",
+          "sentiment": "agreement",
+          "intensity": "low"
+        },
+        {
+          "topic": "Documentation update",
+          "sentiment": "agreement",
+          "intensity": "low"
+        },
+        {
+          "topic": "Cloud costs and optimization",
+          "sentiment": "neutral",
+          "intensity": "low"
+        }
+      ],
+      "flags": {
+        "has_conflict": false,
+        "has_strong_agreement": false,
+        "has_frustration": false,
+        "has_enthusiasm": false
+      }
+    }
   }
 ]
