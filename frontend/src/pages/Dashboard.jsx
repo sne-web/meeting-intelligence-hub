@@ -6,14 +6,10 @@ function Dashboard() {
   const workspace = localStorage.getItem("recall_workspace") || "Workspace"
   const navigate = useNavigate()
 
-  // meetings — list of all uploaded meetings fetched from the backend
   const [meetings, setMeetings] = useState([])
-  // loading — true while we're fetching from the backend
   const [loading, setLoading] = useState(true)
-  // error — any error message to show
   const [error, setError] = useState("")
 
-  // Fetch meetings when the Dashboard first loads
   useEffect(() => {
     fetchMeetings()
   }, [])
@@ -28,6 +24,26 @@ function Dashboard() {
       setError("Could not load meetings. Is the backend running?")
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleDelete(e, meetingId) {
+    // stopPropagation prevents the card click navigating to detail page
+    // when we click the delete button inside the card
+    e.stopPropagation()
+
+    if (!confirm("Are you sure you want to delete this meeting?")) return
+
+    try {
+      const response = await fetch(`/api/transcripts/${meetingId}`, {
+        method: "DELETE"
+      })
+      if (!response.ok) throw new Error("Delete failed")
+
+      // Remove from local state immediately without refetching
+      setMeetings(prev => prev.filter(m => m.id !== meetingId))
+    } catch (err) {
+      alert("Could not delete meeting. Please try again.")
     }
   }
 
@@ -65,7 +81,7 @@ function Dashboard() {
           </div>
           <button
             onClick={() => navigate("/upload")}
-            className="bg-[#00d4e8] hover:bg-[#00b8cc] text-[#0d1117] 
+            className="bg-[#00d4e8] hover:bg-[#00b8cc] text-[#0d1117]
                        font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
           >
             + Upload Transcript
@@ -109,9 +125,9 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Empty state — no meetings yet */}
+        {/* Empty state */}
         {!loading && !error && meetings.length === 0 && (
-          <div className="text-center py-20 border-2 border-dashed 
+          <div className="text-center py-20 border-2 border-dashed
                           border-[#21262d] rounded-2xl">
             <div className="text-5xl mb-4">🎙️</div>
             <h2 className="text-white font-semibold text-lg mb-2">
@@ -122,7 +138,7 @@ function Dashboard() {
             </p>
             <button
               onClick={() => navigate("/upload")}
-              className="bg-[#00d4e8] hover:bg-[#00b8cc] text-[#0d1117] 
+              className="bg-[#00d4e8] hover:bg-[#00b8cc] text-[#0d1117]
                          font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
             >
               Upload your first transcript
@@ -137,16 +153,15 @@ function Dashboard() {
               <div
                 key={meeting.id}
                 onClick={() => navigate(`/meeting/${meeting.id}`)}
-                className="bg-[#161b22] border border-[#21262d] hover:border-[#00d4e8]/50 
+                className="bg-[#161b22] border border-[#21262d] hover:border-[#00d4e8]/50
                            rounded-2xl p-6 cursor-pointer transition-colors group"
               >
-                {/* Meeting filename */}
+                {/* Meeting filename and status */}
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-white font-medium text-sm leading-tight 
+                  <h3 className="text-white font-medium text-sm leading-tight
                                  group-hover:text-[#00d4e8] transition-colors">
                     {meeting.filename}
                   </h3>
-                  {/* Status badge */}
                   <span className={`text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0 ${
                     meeting.status === "processed"
                       ? "bg-green-500/10 text-green-400 border border-green-500/20"
@@ -176,11 +191,23 @@ function Dashboard() {
                   </div>
                 </div>
 
-                {/* Hover arrow */}
-                <div className="mt-4 text-[#00d4e8] text-xs opacity-0 
-                                group-hover:opacity-100 transition-opacity">
-                  View details →
+                {/* Bottom row — view details + delete */}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-[#00d4e8] text-xs opacity-0
+                                  group-hover:opacity-100 transition-opacity">
+                    View details →
+                  </div>
+                  <button
+                    onClick={(e) => handleDelete(e, meeting.id)}
+                    className="text-gray-600 hover:text-red-400 text-xs
+                               opacity-0 group-hover:opacity-100
+                               transition-all px-2 py-1 rounded-lg
+                               hover:bg-red-500/10"
+                  >
+                    Delete
+                  </button>
                 </div>
+
               </div>
             ))}
           </div>

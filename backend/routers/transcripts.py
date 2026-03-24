@@ -139,3 +139,36 @@ def get_meeting(meeting_id: str):
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     return meeting
+
+@router.delete("/{meeting_id}")
+def delete_meeting(meeting_id: str):
+    """
+    Deletes a meeting — removes the file, JSON record, 
+    and ChromaDB collection.
+    """
+    meetings = load_meetings()
+    meeting = next((m for m in meetings if m["id"] == meeting_id), None)
+    
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    # Delete the transcript file from disk
+    try:
+        if os.path.exists(meeting["file_path"]):
+            os.remove(meeting["file_path"])
+    except Exception as e:
+        print(f"Warning: could not delete file: {e}")
+    
+    # Delete from ChromaDB
+    try:
+        import chromadb
+        client = chromadb.PersistentClient(path="storage/chroma_db")
+        client.delete_collection(f"meeting_{meeting_id}")
+    except Exception as e:
+        print(f"Warning: could not delete ChromaDB collection: {e}")
+    
+    # Remove from JSON store
+    meetings = [m for m in meetings if m["id"] != meeting_id]
+    save_meetings(meetings)
+    
+    return {"deleted": True, "meeting_id": meeting_id}
