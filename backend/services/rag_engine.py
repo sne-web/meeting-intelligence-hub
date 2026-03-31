@@ -124,7 +124,10 @@ based ONLY on the meeting transcript excerpts provided below.
 If the answer is not in the excerpts, say "I couldn't find that information 
 in the available transcripts."
 
-Always be specific and cite which part of the transcript supports your answer.
+CRITICAL INSTRUCTIONS:
+1. Provide a clear, natural, and concise answer.
+2. DO NOT quote people or use their names directly in your main answer (e.g., avoid saying "Sarah mentioned" or "John said"). Summarize the decisions or discussions objectively.
+3. You MUST append exactly one citation at the very end of your response in this exact format: "(Supported by <brief summary of the source evidence>)". Do not include literal quotes in the Supported by section either.
 
 TRANSCRIPT EXCERPTS:
 {context}
@@ -132,7 +135,7 @@ TRANSCRIPT EXCERPTS:
 USER QUESTION:
 {question}
 
-Provide a clear, concise answer:"""
+Answer:"""
 
     answer = ask_claude(prompt, max_tokens=1000)
     
