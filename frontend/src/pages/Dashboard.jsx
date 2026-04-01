@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import Navbar from "../components/Navbar"
 import { useNavigate } from "react-router-dom"
+import ChatPanel from "../components/ChatPanel"
 
 function Dashboard() {
   const workspace = localStorage.getItem("recall_workspace") || "Workspace"
@@ -109,6 +110,11 @@ function Dashboard() {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Global Chatbot */}
+        {meetings.filter(m => m.status === "processed").length > 0 && (
+          <ChatPanel />
         )}
 
         {/* Loading state */}

@@ -145,18 +145,43 @@ function MeetingDetail() {
             </div>
           </div>
 
-          {/* Analyse button — only shows if not yet processed */}
-          {meeting?.status !== "processed" && (
-            <button
-              onClick={handleAnalyse}
-              disabled={analysing}
-              className="bg-[#00d4e8] hover:bg-[#00b8cc] disabled:opacity-50
-                         disabled:cursor-not-allowed text-[#0d1117] font-semibold 
-                         px-6 py-3 rounded-xl transition-colors text-sm"
-            >
-              {analysing ? "Analysing with Claude..." : "✨ Analyse with AI"}
-            </button>
-          )}
+          {/* Right Action Cluster */}
+          <div className="flex items-center gap-3">
+            {/* Analyse button — only shows if not yet processed */}
+            {meeting?.status !== "processed" && (
+              <button
+                onClick={handleAnalyse}
+                disabled={analysing}
+                className="bg-[#00d4e8] hover:bg-[#00b8cc] disabled:opacity-50
+                           disabled:cursor-not-allowed text-[#0d1117] font-semibold 
+                           px-6 py-3 rounded-xl transition-colors text-sm"
+              >
+                {analysing ? "Analysing with Claude..." : "✨ Analyse with AI"}
+              </button>
+            )}
+
+            {/* Export buttons */}
+            {meeting?.status === "processed" && (
+              <>
+                <button
+                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/csv`, "_blank")}
+                  className="bg-[#161b22] hover:bg-[#21262d] border border-[#21262d] 
+                             text-white font-medium px-4 py-2 rounded-xl transition-colors text-sm flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Export CSV
+                </button>
+                <button
+                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/pdf`, "_blank")}
+                  className="bg-[#00d4e8]/10 hover:bg-[#00d4e8]/20 border border-[#00d4e8]/30 
+                             text-[#00d4e8] font-medium px-4 py-2 rounded-xl transition-colors text-sm flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Export PDF
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Error message */}
@@ -241,30 +266,40 @@ function MeetingDetail() {
 
             {/* Decisions tab */}
             {activeTab === "decisions" && (
-              <div className="space-y-3">
+              <div>
                 {analysis.decisions?.length === 0 && (
                   <p className="text-gray-400 text-sm">No decisions found in this transcript.</p>
                 )}
-                {analysis.decisions?.map((decision, i) => (
-                  <div key={i} className="bg-[#161b22] border border-[#21262d] 
-                                          rounded-xl p-5">
-                    <div className="flex items-start gap-3">
-                      <span className="text-[#00d4e8] text-sm font-mono mt-0.5">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <div>
-                        <p className="text-white text-sm font-medium">
-                          {decision.description}
-                        </p>
-                        {decision.context && (
-                          <p className="text-gray-500 text-xs mt-1">
-                            {decision.context}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                {analysis.decisions?.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-[#21262d]">
+                          <th className="text-left text-gray-500 text-xs font-medium pb-3 pr-4 w-12">#</th>
+                          <th className="text-left text-gray-500 text-xs font-medium pb-3 pr-4 w-1/3">DECISION</th>
+                          <th className="text-left text-gray-500 text-xs font-medium pb-3">CONTEXT</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#21262d]">
+                        {analysis.decisions?.map((decision, i) => (
+                          <tr key={i} className="hover:bg-[#161b22]/50 transition-colors">
+                            <td className="py-4 pr-4 align-top">
+                              <span className="text-[#00d4e8] text-sm font-mono mt-0.5 inline-block">
+                                {String(i + 1).padStart(2, "0")}
+                              </span>
+                            </td>
+                            <td className="py-4 pr-4 align-top">
+                              <span className="text-white text-sm font-medium">{decision.description}</span>
+                            </td>
+                            <td className="py-4 align-top">
+                              <span className="text-gray-400 text-sm">{decision.context}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                ))}
+                )}
               </div>
             )}
 
@@ -395,13 +430,8 @@ function MeetingDetail() {
                 </div>
               </div>
             )}
-            {/* Chatbot */}
-            <div className="mt-8">
-              <h3 className="text-white font-medium mb-4 text-sm">
-                Ask Recall<span className="text-[#00d4e8]">.</span> about this meeting
-              </h3>
-              <ChatPanel meetingId={id} />
-            </div>
+            {/* Chatbot overlay */}
+            <ChatPanel meetingId={id} />
           </>
         )}
       </div>

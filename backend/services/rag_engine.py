@@ -87,6 +87,14 @@ def query_transcripts(question: str, meeting_id: str = None) -> dict:
     all_chunks = []
     sources = []
     
+    # Load meetings to map IDs to filenames
+    try:
+        import os
+        with open(os.path.join("storage", "meetings_store.json"), "r") as f:
+            all_meetings = json.load(f)
+    except:
+        all_meetings = []
+    
     for collection_name in collection_names:
         try:
             vectorstore = Chroma(
@@ -100,9 +108,17 @@ def query_transcripts(question: str, meeting_id: str = None) -> dict:
             results = vectorstore.similarity_search(question, k=3)
             
             for doc in results:
-                all_chunks.append(doc.page_content)
+                m_id = doc.metadata.get("meeting_id", "unknown")
+                meeting_obj = next((m for m in all_meetings if m.get("id") == m_id), None)
+                fname = meeting_obj.get("filename", m_id) if meeting_obj else m_id
+                
+                # Prepend the filename so the LLM knows the metadata!
+                chunk_text = f"[Source Meeting File: '{fname}']\n{doc.page_content}"
+                all_chunks.append(chunk_text)
+                
                 sources.append({
-                    "meeting_id": doc.metadata.get("meeting_id", "unknown"),
+                    "meeting_id": m_id,
+                    "filename": fname,
                     "chunk": doc.page_content[:100] + "..."
                 })
         except Exception:
@@ -127,7 +143,7 @@ in the available transcripts."
 CRITICAL INSTRUCTIONS:
 1. Provide a clear, natural, and concise answer.
 2. DO NOT quote people or use their names directly in your main answer (e.g., avoid saying "Sarah mentioned" or "John said"). Summarize the decisions or discussions objectively.
-3. You MUST append exactly one citation at the very end of your response in this exact format: "(Supported by <brief summary of the source evidence>)". Do not include literal quotes in the Supported by section either.
+3. You MUST append exactly one citation at the very end of your response in this exact format: "(Supported by: <brief summary of evidence>, from meeting file '<filename>' indicating <brief summary of transcript part>)". Do not include literal quotes anywhere.
 
 TRANSCRIPT EXCERPTS:
 {context}

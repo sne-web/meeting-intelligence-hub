@@ -15,6 +15,8 @@ function ChatPanel({ meetingId = null }) {
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
   // This ref lets us auto-scroll to the latest message
   const bottomRef = useRef(null)
@@ -66,19 +68,49 @@ function ChatPanel({ meetingId = null }) {
     }
   }
 
+  if (!isOpen) {
+    return (
+      <button 
+        onClick={() => setIsOpen(true)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed bottom-8 right-8 z-50 bg-[#00d4e8] text-[#0d1117] 
+                    p-4 rounded-full shadow-lg shadow-[#00d4e8]/20
+                    transition-all duration-300 flex items-center gap-3
+                    ${isHovered ? "scale-105 px-6" : ""}`}
+      >
+        {isHovered && <span className="font-semibold whitespace-nowrap text-sm">Ask Recall.</span>}
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+      </button>
+    )
+  }
+
   return (
-    <div className="flex flex-col h-[500px] bg-[#161b22] border 
-                    border-[#21262d] rounded-2xl overflow-hidden">
+    <div className="fixed bottom-8 right-8 z-50 w-[400px] h-[600px] max-h-[80vh] flex flex-col 
+                    bg-[#161b22] border border-[#21262d] rounded-2xl overflow-hidden shadow-2xl
+                    animate-in slide-in-from-bottom-4 duration-300">
 
       {/* Chat header */}
-      <div className="px-5 py-4 border-b border-[#21262d] flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-[#00d4e8] animate-pulse"></div>
-        <span className="text-white text-sm font-medium">
-          Ask Recall<span className="text-[#00d4e8]">.</span>
-        </span>
-        <span className="text-gray-500 text-xs ml-auto">
-          {meetingId ? "This meeting" : "All meetings"}
-        </span>
+      <div className="px-5 py-4 border-b border-[#21262d] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#00d4e8] animate-pulse"></div>
+          <span className="text-white text-sm font-medium">
+            Ask Recall<span className="text-[#00d4e8]">.</span>
+          </span>
+          <span className="text-gray-500 text-xs ml-2">
+            {meetingId ? "This meeting" : "All meetings"}
+          </span>
+        </div>
+        <button 
+          onClick={() => setIsOpen(false)} 
+          className="text-gray-500 hover:text-white transition-colors p-1"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
 
       {/* Messages area */}
