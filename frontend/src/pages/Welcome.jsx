@@ -1,19 +1,6 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 
 function Welcome() {
-  const [name, setName] = useState("")
-  const [error, setError] = useState("")
-  const navigate = useNavigate()
-
-  function handleStart() {
-    if (!name.trim()) {
-      setError("Please enter a workspace name to continue")
-      return
-    }
-    localStorage.setItem("recall_workspace", name.trim())
-    navigate("/dashboard")
-  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center px-4 relative overflow-hidden">
@@ -35,34 +22,27 @@ function Welcome() {
           The ultimate meeting intelligence platform. Automatically transcribe, analyze, and extract insights from your conversations with unparalleled accuracy.
         </p>
         
-        {/* Workspace Login Card */}
+        {/* Auth Required */}
         <div className="w-full max-w-md bg-[#161b22]/90 backdrop-blur-md border border-[#21262d] rounded-2xl p-8 shadow-2xl relative text-left">
           <h2 className="text-white text-2xl font-semibold mb-2">Get Started</h2>
-          <p className="text-gray-400 text-sm mb-6">Enter a workspace name to begin.</p>
-
-          <input
-            type="text"
-            placeholder="e.g. Acme Corp, My Team, Personal..."
-            value={name}
-            onChange={(e) => { 
-                setName(e.target.value); 
-                setError(""); 
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleStart()}
-            className="w-full bg-[#0d1117] border border-[#21262d] text-white
-                       placeholder-gray-600 rounded-xl px-4 py-3 text-sm
-                       focus:outline-none focus:border-[#00d4e8] transition-colors"
-          />
-
-          {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
-
-          <button
-            onClick={handleStart}
-            className="w-full mt-6 bg-[#00d4e8] hover:bg-[#00b8cc] text-[#0d1117]
-                       font-semibold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(0,212,232,0.2)] hover:shadow-[0_0_25px_rgba(0,212,232,0.4)] text-sm"
-          >
-            Enter Workspace →
-          </button>
+          <p className="text-gray-400 text-sm mb-6">Create an account or login to access your meetings.</p>
+          
+          <div className="flex flex-col space-y-4">
+            <Link
+              to="/login"
+              className="w-full bg-[#00d4e8] hover:bg-[#00b8cc] text-[#0d1117]
+                         font-semibold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(0,212,232,0.2)] hover:shadow-[0_0_25px_rgba(0,212,232,0.4)] text-sm text-center"
+            >
+              Log In
+            </Link>
+            <Link
+              to="/register"
+              className="w-full bg-transparent border border-[#21262d] hover:bg-[#21262d] text-white
+                         font-semibold py-3 rounded-xl transition-all text-sm text-center"
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
       </div>
 

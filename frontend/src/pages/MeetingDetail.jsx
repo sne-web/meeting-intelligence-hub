@@ -22,14 +22,18 @@ function MeetingDetail() {
   async function fetchMeeting() {
     try {
       // Fetch meeting metadata
-      const res = await fetch(`/api/transcripts/${id}`)
+      const res = await fetch(`/api/transcripts/${id}`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      })
       if (!res.ok) throw new Error("Meeting not found")
       const data = await res.json()
       setMeeting(data)
 
       // If already processed, fetch the analysis too
       if (data.status === "processed") {
-        const analysisRes = await fetch(`/api/analysis/${id}`)
+        const analysisRes = await fetch(`/api/analysis/${id}`, {
+          headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        })
         if (analysisRes.ok) {
           const analysisData = await analysisRes.json()
           setAnalysis(analysisData)
@@ -46,10 +50,11 @@ function MeetingDetail() {
     setAnalysing(true)
     setError("")
     try {
-      // This calls Claude to analyse the transcript
+      // This calls the AI to analyse the transcript
       // It may take 10-20 seconds depending on transcript length
       const res = await fetch(`/api/analysis/analyse/${id}`, {
-        method: "POST"
+        method: "POST",
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       })
       if (!res.ok) throw new Error("Analysis failed")
       const data = await res.json()
@@ -156,7 +161,7 @@ function MeetingDetail() {
                            disabled:cursor-not-allowed text-[#0d1117] font-semibold 
                            px-6 py-3 rounded-xl transition-colors text-sm"
               >
-                {analysing ? "Analysing with Claude..." : "✨ Analyse with AI"}
+                {analysing ? "Analysing..." : "✨ Analyse with AI"}
               </button>
             )}
 
@@ -164,7 +169,7 @@ function MeetingDetail() {
             {meeting?.status === "processed" && (
               <>
                 <button
-                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/csv`, "_blank")}
+                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/csv?token=${localStorage.getItem("token")}`, "_blank")}
                   className="bg-[#161b22] hover:bg-[#21262d] border border-[#21262d] 
                              text-white font-medium px-4 py-2 rounded-xl transition-colors text-sm flex items-center gap-2"
                 >
@@ -172,7 +177,7 @@ function MeetingDetail() {
                   Export CSV
                 </button>
                 <button
-                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/pdf`, "_blank")}
+                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/pdf?token=${localStorage.getItem("token")}`, "_blank")}
                   className="bg-[#00d4e8]/10 hover:bg-[#00d4e8]/20 border border-[#00d4e8]/30 
                              text-[#00d4e8] font-medium px-4 py-2 rounded-xl transition-colors text-sm flex items-center gap-2"
                 >
@@ -197,7 +202,7 @@ function MeetingDetail() {
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-[#00d4e8] animate-pulse"></div>
               <p className="text-white text-sm">
-                Claude is reading your transcript and extracting insights...
+                The AI is reading your transcript and extracting insights...
               </p>
             </div>
             <p className="text-gray-500 text-xs mt-2 ml-5">
@@ -216,7 +221,7 @@ function MeetingDetail() {
             </h2>
             <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
               Click "Analyse with AI" above to extract decisions, action items, 
-              and sentiment from this transcript using Claude.
+              and sentiment from this transcript.
             </p>
           </div>
         )}
@@ -234,9 +239,6 @@ function MeetingDetail() {
                       {analysis.sentiment.overall_sentiment}
                     </span>
                   </div>
-                  <span className="text-gray-400 text-xs">
-                    Score: {analysis.sentiment.overall_score?.toFixed(2)}
-                  </span>
                 </div>
                 <p className="text-gray-400 text-xs mt-2">
                   {analysis.sentiment.summary}
@@ -387,19 +389,10 @@ function MeetingDetail() {
                           </span>
                           <span className={`text-xs font-medium capitalize 
                                            ${getSentimentColor(s.sentiment)}`}>
-                            {s.sentiment} ({s.score?.toFixed(2)})
+                            {s.sentiment}
                           </span>
                         </div>
                         <p className="text-gray-500 text-xs">{s.notes}</p>
-                        {/* Score bar */}
-                        <div className="mt-2 h-1.5 bg-[#21262d] rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[#00d4e8] rounded-full"
-                            style={{
-                              width: `${((s.score + 1) / 2) * 100}%`
-                            }}
-                          />
-                        </div>
                       </div>
                     ))}
                   </div>

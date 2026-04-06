@@ -1,8 +1,8 @@
 import json
 import re
-from services.claude_client import ask_claude
+from services.llm_client import ask_ai
 
-# This is the system prompt — it tells Claude what role to play
+# This is the system prompt — it tells the AI what role to play
 # and what format to respond in
 EXTRACTION_SYSTEM_PROMPT = """You are an expert meeting analyst. 
 Your job is to carefully read meeting transcripts and extract:
@@ -13,7 +13,7 @@ Always respond with valid JSON only. No explanations, no markdown, just JSON."""
 
 def extract_decisions_and_actions(transcript_text: str) -> dict:
     """
-    Sends the transcript to Claude and asks it to extract
+    Sends the transcript to the AI and asks it to extract
     decisions and action items as structured JSON.
     
     Returns a dict with 'decisions' and 'action_items' lists.
@@ -50,9 +50,9 @@ Rules:
 - Action items are tasks assigned to specific people"""
 
     try:
-        response = ask_claude(prompt, system=EXTRACTION_SYSTEM_PROMPT, max_tokens=3000)
+        response = ask_ai(prompt, system=EXTRACTION_SYSTEM_PROMPT, max_tokens=3000)
         
-        # Claude should return pure JSON but sometimes adds extra text
+        # The AI should return pure JSON but sometimes adds extra text
         # This finds the JSON object within the response just in case
         json_match = re.search(r'\{.*\}', response, re.DOTALL)
         if json_match:
@@ -63,7 +63,7 @@ Rules:
         return result
     
     except json.JSONDecodeError:
-        # If Claude returns something we can't parse, return empty results
+        # If the AI returns something we can't parse, return empty results
         return {"decisions": [], "action_items": []}
     except Exception as e:
         raise Exception(f"Extraction failed: {str(e)}")

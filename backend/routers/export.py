@@ -1,44 +1,48 @@
 import csv
 import io
-import json
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
+from supabase import create_client, ClientOptions
 
 router = APIRouter(prefix="/api/export", tags=["export"])
 
-STORAGE_DIR = "storage"
-MEETINGS_FILE = os.path.join(STORAGE_DIR, "meetings_store.json")
-
-def get_meeting(meeting_id: str):
-    if not os.path.exists(MEETINGS_FILE):
-        raise HTTPException(status_code=404, detail="No meetings found")
-    with open(MEETINGS_FILE, "r") as f:
-        meetings = json.load(f)
-    meeting = next((m for m in meetings if m["id"] == meeting_id), None)
-    if not meeting:
+def get_meeting(meeting_id: str, token: str):
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_KEY")
+    supabase = create_client(url, key, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+    
+    res = supabase.table("meetings").select("filename, upload_date, analysis_results").eq("id", meeting_id).execute()
+    if not res.data:
         raise HTTPException(status_code=404, detail="Meeting not found")
-    return meeting
+        
+    m = res.data[0]
+    analysis = m.get("analysis_results") or {}
+    
+    return {
+        "filename": m["filename"],
+        "upload_date": m["upload_date"],
+        "sentiment": analysis.get("sentiment", {}),
+        "decisions": analysis.get("decisions", []),
+        "action_items": analysis.get("action_items", [])
+    }
 
 @router.get("/{meeting_id}/csv")
-def export_csv(meeting_id: str):
-    meeting = get_meeting(meeting_id)
+def export_csv(meeting_id: str, token: str = Query(...)):
+    meeting = get_meeting(meeting_id, token)
     
-    # Create an in-memory string buffer
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # Write metadata
     writer.writerow(["Meeting File", meeting.get("filename", "Unknown")])
     writer.writerow(["Upload Date", meeting.get("upload_date", "")])
     writer.writerow(["Overall Sentiment", meeting.get("sentiment", {}).get("overall_sentiment", "")])
     writer.writerow([])
     
-    # Write Decisions
     writer.writerow(["--- DECISIONS ---"])
     writer.writerow(["Decision", "Context"])
     for dec in meeting.get("decisions", []):
@@ -46,7 +50,6 @@ def export_csv(meeting_id: str):
     
     writer.writerow([])
     
-    # Write Action Items
     writer.writerow(["--- ACTION ITEMS ---"])
     writer.writerow(["Who", "What", "By When", "Priority"])
     for item in meeting.get("action_items", []):
@@ -61,10 +64,9 @@ def export_csv(meeting_id: str):
     )
 
 @router.get("/{meeting_id}/pdf")
-def export_pdf(meeting_id: str):
-    meeting = get_meeting(meeting_id)
+def export_pdf(meeting_id: str, token: str = Query(...)):
+    meeting = get_meeting(meeting_id, token)
     
-    # Create an in-memory bytes buffer
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     elements = []
@@ -74,20 +76,17 @@ def export_pdf(meeting_id: str):
     h2 = styles['Heading2']
     normal = styles['Normal']
     
-    # Title
     elements.append(Paragraph(f"Meeting Analysis: {meeting.get('filename', 'Unknown')}", h1))
     elements.append(Paragraph(f"Date: {meeting.get('upload_date', 'N/A')}", normal))
     elements.append(Spacer(1, 12))
     
-    # Sentiment
     sentiment = meeting.get("sentiment", {})
     if sentiment:
         elements.append(Paragraph("Sentiment Overview", h2))
-        elements.append(Paragraph(f"Overall: {sentiment.get('overall_sentiment', 'N/A')} (Score: {sentiment.get('overall_score', 0)})", normal))
+        elements.append(Paragraph(f"Overall: {sentiment.get('overall_sentiment', 'N/A')}", normal))
         elements.append(Paragraph(f"Summary: {sentiment.get('summary', 'N/A')}", normal))
         elements.append(Spacer(1, 12))
         
-    # Decisions Table
     decisions = meeting.get("decisions", [])
     if decisions:
         elements.append(Paragraph("Decisions", h2))
@@ -112,7 +111,6 @@ def export_pdf(meeting_id: str):
         elements.append(table)
         elements.append(Spacer(1, 12))
         
-    # Action Items Table
     action_items = meeting.get("action_items", [])
     if action_items:
         elements.append(Paragraph("Action Items", h2))

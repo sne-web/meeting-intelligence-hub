@@ -39,7 +39,10 @@ function ChatPanel({ meetingId = null }) {
     try {
       const response = await fetch("/api/chat/ask", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
         // Send question and optional meeting_id to backend
         body: JSON.stringify({
           question,

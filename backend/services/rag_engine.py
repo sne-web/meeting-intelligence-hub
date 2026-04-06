@@ -3,7 +3,7 @@ import json
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from services.claude_client import ask_claude
+from services.llm_client import ask_ai
 
 # Where ChromaDB stores its data on disk
 CHROMA_DIR = "storage/chroma_db"
@@ -57,7 +57,7 @@ def index_transcript(meeting_id: str, transcript_text: str):
     return len(chunks)
 
 
-def query_transcripts(question: str, meeting_id: str = None) -> dict:
+def query_transcripts(question: str, meeting_id: str = None, user_id: str = None) -> dict:
     """
     Searches through indexed transcripts to find relevant chunks,
     then asks the AI to answer the question using those chunks.
@@ -65,17 +65,30 @@ def query_transcripts(question: str, meeting_id: str = None) -> dict:
     question   — the user's question
     meeting_id — if provided, only search this meeting's transcript
                  if None, search across ALL meetings
+    user_id    — the authenticated user's ID
     """
+    try:
+        import os
+        with open(os.path.join("storage", "meetings_store.json"), "r") as f:
+            all_meetings = json.load(f)
+    except:
+        all_meetings = []
     
     # Build list of collections to search
     if meeting_id:
+        meeting = next((m for m in all_meetings if m.get("id") == meeting_id and m.get("user_id") == user_id), None)
+        if not meeting:
+            return {"answer": "Meeting not found or you do not have permission to access it.", "sources": []}
         collection_names = [f"meeting_{meeting_id}"]
     else:
-        # Search all meetings — get all collection names from ChromaDB
-        import chromadb
-        client = chromadb.PersistentClient(path=CHROMA_DIR)
-        collections = client.list_collections()
-        collection_names = [c.name for c in collections]
+        if user_id:
+            user_meetings = [m for m in all_meetings if m.get("user_id") == user_id]
+            collection_names = [f"meeting_{m['id']}" for m in user_meetings]
+        else:
+            import chromadb
+            client = chromadb.PersistentClient(path=CHROMA_DIR)
+            collections = client.list_collections()
+            collection_names = [c.name for c in collections]
     
     if not collection_names:
         return {
@@ -87,13 +100,7 @@ def query_transcripts(question: str, meeting_id: str = None) -> dict:
     all_chunks = []
     sources = []
     
-    # Load meetings to map IDs to filenames
-    try:
-        import os
-        with open(os.path.join("storage", "meetings_store.json"), "r") as f:
-            all_meetings = json.load(f)
-    except:
-        all_meetings = []
+    # Pre-loaded meetings map already hoisted to top of function
     
     for collection_name in collection_names:
         try:
@@ -153,7 +160,7 @@ USER QUESTION:
 
 Answer:"""
 
-    answer = ask_claude(prompt, max_tokens=1000)
+    answer = ask_ai(prompt, max_tokens=1000)
     
     return {
         "answer": answer,

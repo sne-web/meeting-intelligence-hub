@@ -4,20 +4,56 @@ import { useNavigate } from "react-router-dom"
 import ChatPanel from "../components/ChatPanel"
 
 function Dashboard() {
-  const workspace = localStorage.getItem("recall_workspace") || "Workspace"
+  const [workspace, setWorkspace] = useState("Loading...")
   const navigate = useNavigate()
 
   const [meetings, setMeetings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  const [showNameModal, setShowNameModal] = useState(false)
+  const [newName, setNewName] = useState("")
+  const [savingName, setSavingName] = useState(false)
+
   useEffect(() => {
+    fetch("/api/auth/me", { headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`} })
+      .then(res => {
+        if (!res.ok) throw new Error("Auth failed")
+        return res.json()
+      })
+      .then(data => {
+        if (!data.full_name) setShowNameModal(true)
+        else setWorkspace(data.full_name)
+      })
+      .catch(err => console.error(err))
+    // Also fetch meetings
     fetchMeetings()
   }, [])
 
+  async function saveName() {
+    if (!newName.trim()) return
+    setSavingName(true)
+    try {
+      await fetch("/api/auth/me/name", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ full_name: newName.trim() })
+      })
+      setWorkspace(newName.trim())
+      setShowNameModal(false)
+    } finally {
+      setSavingName(false)
+    }
+  }
+
   async function fetchMeetings() {
     try {
-      const response = await fetch("/api/transcripts/")
+      const response = await fetch("/api/transcripts/", {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      })
       if (!response.ok) throw new Error("Failed to fetch meetings")
       const data = await response.json()
       setMeetings(data.meetings)
@@ -37,7 +73,8 @@ function Dashboard() {
 
     try {
       const response = await fetch(`/api/transcripts/${meetingId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       })
       if (!response.ok) throw new Error("Delete failed")
 
@@ -57,14 +94,36 @@ function Dashboard() {
     })
   }
 
-  // Calculate total action items across all meetings
-  const totalActionItems = meetings.reduce(
-    (sum, m) => sum + (m.action_items_count || 0), 0
-  )
-
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
       <Navbar />
+
+      {/* Name Modal */}
+      {showNameModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-[#21262d] rounded-2xl p-8 max-w-md w-full shadow-2xl relative text-left">
+            <h2 className="text-white text-2xl font-bold mb-2">Welcome! What should we call you?</h2>
+            <p className="text-gray-400 text-sm mb-6">Please enter a display name to continue to your dashboard.</p>
+            <input
+              type="text"
+              placeholder="e.g. Acme Corp, John Doe"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full bg-[#0d1117] border border-[#21262d] text-white
+                         placeholder-gray-600 rounded-xl px-4 py-3 text-sm
+                         focus:outline-none focus:border-[#00d4e8] transition-colors mb-6"
+            />
+            <button
+              onClick={saveName}
+              disabled={savingName || !newName.trim()}
+              className="w-full bg-[#00d4e8] hover:bg-[#00b8cc] text-[#0d1117]
+                         font-semibold py-3 rounded-xl transition-all disabled:opacity-50 text-sm"
+            >
+              {savingName ? "Saving..." : "Continue to Dashboard →"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-6 py-12">
 
@@ -97,10 +156,6 @@ function Dashboard() {
               <p className="text-3xl font-bold text-white">{meetings.length}</p>
             </div>
             <div className="bg-[#161b22] border border-[#21262d] rounded-2xl p-6">
-              <p className="text-gray-400 text-sm mb-1">Action Items</p>
-              <p className="text-3xl font-bold text-[#00d4e8]">{totalActionItems}</p>
-            </div>
-            <div className="bg-[#161b22] border border-[#21262d] rounded-2xl p-6">
               <p className="text-gray-400 text-sm mb-1">Processed</p>
               <p className="text-3xl font-bold text-white">
                 {meetings.filter(m => m.status === "processed").length}
@@ -109,6 +164,7 @@ function Dashboard() {
                 </span>
               </p>
             </div>
+            <div></div>
           </div>
         )}
 

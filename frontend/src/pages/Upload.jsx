@@ -79,7 +79,8 @@ function Upload() {
 
       const response = await fetch("/api/transcripts/upload", {
         method: "POST",
-        body: formData
+        body: formData,
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         // Note: don't set Content-Type header — browser sets it automatically
         // with the correct boundary for multipart/form-data
       })

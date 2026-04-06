@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routers import transcripts, analysis, chat, export
+from routers import transcripts, analysis, chat, export, auth
 
 load_dotenv()
 
@@ -19,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(transcripts.router)
 app.include_router(analysis.router)
 app.include_router(chat.router)

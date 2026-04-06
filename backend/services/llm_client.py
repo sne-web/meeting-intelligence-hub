@@ -16,11 +16,9 @@ def get_client():
     
     return Groq(api_key=api_key)
 
-def ask_claude(prompt: str, system: str = None, max_tokens: int = 2000) -> str:
+def ask_ai(prompt: str, system: str = None, max_tokens: int = 2000) -> str:
     """
     Sends a message to Groq and returns the response as a string.
-    We kept the function name as ask_claude so we don't have to
-    change any other file — they all still call ask_claude() as normal.
     
     prompt     — the user message to send
     system     — optional system prompt setting the AI's behaviour

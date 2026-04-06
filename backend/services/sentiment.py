@@ -1,6 +1,6 @@
 import json
 import re
-from services.claude_client import ask_claude
+from services.llm_client import ask_ai
 
 SENTIMENT_SYSTEM_PROMPT = """You are an expert in workplace communication and meeting dynamics.
 Analyse meeting transcripts for sentiment, tone, and emotional dynamics.
@@ -22,13 +22,11 @@ SPEAKERS IDENTIFIED: {', '.join(speakers) if speakers else 'Unknown'}
 Return a JSON object in exactly this format:
 {{
   "overall_sentiment": "positive/negative/neutral/mixed",
-  "overall_score": 0.0,
   "summary": "2-3 sentence summary of the meeting tone and dynamics",
   "speaker_sentiments": [
     {{
       "speaker": "name",
       "sentiment": "positive/negative/neutral",
-      "score": 0.0,
       "notes": "brief observation about this speaker's tone"
     }}
   ],
@@ -48,12 +46,11 @@ Return a JSON object in exactly this format:
 }}
 
 Rules:
-- Scores range from -1.0 (very negative) to 1.0 (very positive)
 - Be objective and professional
 - Base analysis only on what is in the transcript"""
 
     try:
-        response = ask_claude(prompt, system=SENTIMENT_SYSTEM_PROMPT, max_tokens=2000)
+        response = ask_ai(prompt, system=SENTIMENT_SYSTEM_PROMPT, max_tokens=2000)
         
         json_match = re.search(r'\{.*\}', response, re.DOTALL)
         if json_match:
@@ -66,7 +63,6 @@ Rules:
     except json.JSONDecodeError:
         return {
             "overall_sentiment": "neutral",
-            "overall_score": 0.0,
             "summary": "Could not analyse sentiment.",
             "speaker_sentiments": [],
             "segments": [],
