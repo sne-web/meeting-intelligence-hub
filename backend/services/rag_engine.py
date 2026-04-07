@@ -57,44 +57,21 @@ def index_transcript(meeting_id: str, transcript_text: str):
     return len(chunks)
 
 
-def query_transcripts(question: str, meeting_id: str = None, user_id: str = None) -> dict:
+def query_transcripts(question: str, accessible_meetings: list) -> dict:
     """
     Searches through indexed transcripts to find relevant chunks,
     then asks the AI to answer the question using those chunks.
     
     question   — the user's question
-    meeting_id — if provided, only search this meeting's transcript
-                 if None, search across ALL meetings
-    user_id    — the authenticated user's ID
+    accessible_meetings — list of dictionaries containing 'id' and 'filename' of allowed meetings
     """
-    try:
-        import os
-        with open(os.path.join("storage", "meetings_store.json"), "r") as f:
-            all_meetings = json.load(f)
-    except:
-        all_meetings = []
-    
-    # Build list of collections to search
-    if meeting_id:
-        meeting = next((m for m in all_meetings if m.get("id") == meeting_id and m.get("user_id") == user_id), None)
-        if not meeting:
-            return {"answer": "Meeting not found or you do not have permission to access it.", "sources": []}
-        collection_names = [f"meeting_{meeting_id}"]
-    else:
-        if user_id:
-            user_meetings = [m for m in all_meetings if m.get("user_id") == user_id]
-            collection_names = [f"meeting_{m['id']}" for m in user_meetings]
-        else:
-            import chromadb
-            client = chromadb.PersistentClient(path=CHROMA_DIR)
-            collections = client.list_collections()
-            collection_names = [c.name for c in collections]
-    
-    if not collection_names:
+    if not accessible_meetings:
         return {
             "answer": "No transcripts have been indexed yet. Please analyse a meeting first.",
             "sources": []
         }
+        
+    collection_names = [f"meeting_{m['id']}" for m in accessible_meetings]
     
     # Search each collection and gather relevant chunks
     all_chunks = []
@@ -116,7 +93,7 @@ def query_transcripts(question: str, meeting_id: str = None, user_id: str = None
             
             for doc in results:
                 m_id = doc.metadata.get("meeting_id", "unknown")
-                meeting_obj = next((m for m in all_meetings if m.get("id") == m_id), None)
+                meeting_obj = next((m for m in accessible_meetings if m.get("id") == m_id), None)
                 fname = meeting_obj.get("filename", m_id) if meeting_obj else m_id
                 
                 # Prepend the filename so the LLM knows the metadata!

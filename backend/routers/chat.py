@@ -13,19 +13,37 @@ def get_user_client(token: str):
     key = os.getenv("SUPABASE_KEY")
     return create_client(url, key, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
 
+from typing import Optional
+
 class ChatRequest(BaseModel):
     question: str
-    meeting_id: str = None  # Optional
+    meeting_id: Optional[str] = None  # Optional
 
 @router.post("/ask")
-async def ask_question(request: ChatRequest, user = Depends(get_current_user)):
+async def ask_question(request: ChatRequest, user = Depends(get_current_user), credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
     
+    supabase = get_user_client(credentials.credentials)
+    
+    # Fetch meetings user has access to
+    if request.meeting_id:
+        res = supabase.table("meetings").select("id, filename").eq("id", request.meeting_id).eq("user_id", str(user.id)).execute()
+    else:
+        res = supabase.table("meetings").select("id, filename").eq("user_id", str(user.id)).execute()
+        
+    accessible_meetings = res.data
+    
+    if not accessible_meetings:
+        return {
+            "answer": "I couldn't find any accessible transcripts to search. Please ensure meetings are uploaded and analyzed.",
+            "sources": [],
+            "question": request.question
+        }
+
     result = query_transcripts(
         question=request.question,
-        meeting_id=request.meeting_id,
-        user_id=str(user.id)
+        accessible_meetings=accessible_meetings
     )
     
     return {
