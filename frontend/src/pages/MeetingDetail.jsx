@@ -169,7 +169,7 @@ function MeetingDetail() {
             {meeting?.status === "processed" && (
               <>
                 <button
-                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/csv?token=${localStorage.getItem("token")}`, "_blank")}
+                  onClick={() => window.open(`/api/export/${id}/csv?token=${localStorage.getItem("token")}`, "_blank")}
                   className="bg-[#161b22] hover:bg-[#21262d] border border-[#21262d] 
                              text-white font-medium px-4 py-2 rounded-xl transition-colors text-sm flex items-center gap-2"
                 >
@@ -177,7 +177,7 @@ function MeetingDetail() {
                   Export CSV
                 </button>
                 <button
-                  onClick={() => window.open(`http://localhost:8000/api/export/${id}/pdf?token=${localStorage.getItem("token")}`, "_blank")}
+                  onClick={() => window.open(`/api/export/${id}/pdf?token=${localStorage.getItem("token")}`, "_blank")}
                   className="bg-[#00d4e8]/10 hover:bg-[#00d4e8]/20 border border-[#00d4e8]/30 
                              text-[#00d4e8] font-medium px-4 py-2 rounded-xl transition-colors text-sm flex items-center gap-2"
                 >

@@ -57,13 +57,14 @@ def index_transcript(meeting_id: str, transcript_text: str):
     return len(chunks)
 
 
-def query_transcripts(question: str, accessible_meetings: list) -> dict:
+def query_transcripts(question: str, accessible_meetings: list, supabase_client=None) -> dict:
     """
     Searches through indexed transcripts to find relevant chunks,
     then asks the AI to answer the question using those chunks.
     
     question   — the user's question
     accessible_meetings — list of dictionaries containing 'id' and 'filename' of allowed meetings
+    supabase_client — optional Supabase client to fetch transcript texts and auto-index on demand
     """
     if not accessible_meetings:
         return {
@@ -71,15 +72,14 @@ def query_transcripts(question: str, accessible_meetings: list) -> dict:
             "sources": []
         }
         
-    collection_names = [f"meeting_{m['id']}" for m in accessible_meetings]
-    
     # Search each collection and gather relevant chunks
     all_chunks = []
     sources = []
     
-    # Pre-loaded meetings map already hoisted to top of function
-    
-    for collection_name in collection_names:
+    for meeting in accessible_meetings:
+        meeting_id = meeting["id"]
+        filename = meeting.get("filename", meeting_id)
+        collection_name = f"meeting_{meeting_id}"
         try:
             vectorstore = Chroma(
                 collection_name=collection_name,
@@ -87,6 +87,27 @@ def query_transcripts(question: str, accessible_meetings: list) -> dict:
                 persist_directory=CHROMA_DIR
             )
             
+            # Check if this collection is empty/missing in local storage (e.g. after server reboot)
+            try:
+                item_count = vectorstore._collection.count()
+            except Exception:
+                item_count = 0
+
+            if item_count == 0 and supabase_client is not None:
+                # Fetch transcript text from Supabase
+                res = supabase_client.table("meetings").select("transcript_text").eq("id", meeting_id).execute()
+                if res.data:
+                    transcript_text = res.data[0].get("transcript_text", "")
+                    if transcript_text:
+                        print(f"Collection {collection_name} is empty. Auto-indexing from Supabase...")
+                        index_transcript(meeting_id, transcript_text)
+                        # Re-instantiate to load newly added texts
+                        vectorstore = Chroma(
+                            collection_name=collection_name,
+                            embedding_function=embeddings,
+                            persist_directory=CHROMA_DIR
+                        )
+
             # similarity_search finds the top k most relevant chunks
             # It converts the question to a vector and finds similar vectors
             results = vectorstore.similarity_search(question, k=3)
@@ -105,7 +126,8 @@ def query_transcripts(question: str, accessible_meetings: list) -> dict:
                     "filename": fname,
                     "chunk": doc.page_content[:100] + "..."
                 })
-        except Exception:
+        except Exception as e:
+            print(f"Error searching Chroma collection {collection_name}: {e}")
             continue
     
     if not all_chunks:

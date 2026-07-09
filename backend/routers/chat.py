@@ -43,7 +43,8 @@ async def ask_question(request: ChatRequest, user = Depends(get_current_user), c
 
     result = query_transcripts(
         question=request.question,
-        accessible_meetings=accessible_meetings
+        accessible_meetings=accessible_meetings,
+        supabase_client=supabase
     )
     
     return {
