@@ -1,4 +1,7 @@
 import os
+# Ensure we use the exact same cache directory that we downloaded to during build step
+os.environ["HF_HOME"] = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "hf_cache"))
+
 import json
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
