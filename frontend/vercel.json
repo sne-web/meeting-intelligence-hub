@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-backend-service-name.onrender.com/api/:path*"
+      "destination": "https://recall-backend-ck8p.onrender.com/api/:path*"
     },
     {
       "source": "/api",
-      "destination": "https://your-backend-service-name.onrender.com/api"
+      "destination": "https://recall-backend-ck8p.onrender.com/api"
     }
   ]
 }
