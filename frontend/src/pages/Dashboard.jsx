@@ -51,7 +51,7 @@ function Dashboard() {
 
   async function fetchMeetings() {
     try {
-      const response = await fetch("/api/transcripts/", {
+      const response = await fetch("/api/transcripts", {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       })
       if (!response.ok) throw new Error("Failed to fetch meetings")

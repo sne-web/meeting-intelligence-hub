@@ -66,6 +66,7 @@ async def upload_transcripts(
 
     return {"uploaded": uploaded, "count": len(uploaded)}
 
+@router.get("")
 @router.get("/")
 def get_meetings(user = Depends(get_current_user), credentials: HTTPAuthorizationCredentials = Depends(security)):
     supabase = get_user_client(credentials.credentials)
